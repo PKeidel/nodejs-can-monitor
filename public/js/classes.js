@@ -4,6 +4,7 @@ class MyChart {
             ['x'],
             ['data1']
         ];
+        this.started = (new Date()).getTime();
         this.chart = c3.generate({
             bindto: '#' + id,
             data: {
@@ -18,13 +19,16 @@ class MyChart {
                 x: {
                     type: 'timeseries',
                     tick: {
-                        format: '%Y-%m-%d'
+                        format: '%H:%M:%S'
                     }
                 }
             }
         });
     }
     add(x, y) {
+
+        if(!y)
+            return;
 
         // 300 samples => 5 minutes
         while(this.data[0].length > 300) {
@@ -39,7 +43,7 @@ class MyChart {
             this.data[1].unshift(t2);
         }
 
-        this.data[0].push(new Date().toISOString());
+        this.data[0].push(new Date(this.started + x * 1000).toISOString());
         this.data[1].push(y);
         this.chart.load({
             columns: this.data
@@ -109,54 +113,54 @@ class GUI {
 
     // replaces: ${cid}, ${byteNr}, ${value}
     updateCarStatus(cid, byteNr, value) {
-    const statusID = cid + '-' + byteNr;
+        const statusID = cid + '-' + byteNr;
 
-    // if(cid === 'canid_0x4F0' && byteNr === 2) {
-    //     gaugeChart.load({
-    //         columns: [['data', Math.round(value / 1.88 * 10) / 10]]
-    //     });
-    // }
+        // if(cid === 'canid_0x4F0' && byteNr === 2) {
+        //     gaugeChart.load({
+        //         columns: [['data', Math.round(value / 1.88 * 10) / 10]]
+        //     });
+        // }
 
-    if(!known.hasOwnProperty(cid) || !known[cid].hasOwnProperty('byte_' + byteNr))
-        return;
+        if(!known.hasOwnProperty(cid) || !known[cid].hasOwnProperty('byte_' + byteNr))
+            return;
 
-    // Bitmask
-    for(let mask in known[cid]['byte_' + byteNr]) {
-        if(known[cid]['byte_' + byteNr].hasOwnProperty(mask)) {
-            const obj = known[cid]['byte_' + byteNr][mask];
-            const mskStr = mask.replace(/mask_/, '');
-            const msk = parseInt(mskStr, 2);
-            const currentValue = (msk & value).toString(2);
+        // Bitmask
+        for(let mask in known[cid]['byte_' + byteNr]) {
+            if(known[cid]['byte_' + byteNr].hasOwnProperty(mask)) {
+                const obj = known[cid]['byte_' + byteNr][mask];
+                const mskStr = mask.replace(/mask_/, '');
+                const msk = parseInt(mskStr, 2);
+                const currentValue = (msk & value).toString(2);
 
-            let eleID = 'status_' + statusID + '_' + mskStr, div = document.querySelector('#carstatus #' + eleID);
-            if(!div) {
-                div = document.createElement('span');
-                div.id = eleID;
-                div.title = cid + ', Byte: ' + byteNr + ', mask: ' + mskStr;
-                div.classList.add('carstatus');
-                document.querySelector('#carstatus').appendChild(div);
-            }
-            div.innerHTML = '';
-
-            let txt = obj.text + ': ';
-            if(obj.values && obj.values.hasOwnProperty(currentValue))
-                txt += obj.values[currentValue];
-            else if(obj.hasOwnProperty('display')) {
-                try {
-                    txt += eval('Math.round(' + replaceString(obj.display, {value: value}) + ' * 10) / 10');
-                } catch(e) {
-                    console.error("Fehler beim eval von: Math.round(" + replaceString(obj.display, {value: value}) + " * 10) / 10");
+                let eleID = 'status_' + statusID + '_' + mskStr, div = document.querySelector('#carstatus #' + eleID);
+                if(!div) {
+                    div = document.createElement('span');
+                    div.id = eleID;
+                    div.title = cid + ', Byte: ' + byteNr + ', mask: ' + mskStr;
+                    div.classList.add('carstatus');
+                    document.querySelector('#carstatus').appendChild(div);
                 }
-            } else
-                txt += '(' + Helper.toBin(currentValue) + ') -unknown-';
+                div.innerHTML = '';
 
-            if(obj.unit)
-                txt += ' ' + obj.unit;
+                let txt = obj.text + ': ';
+                if(obj.values && obj.values.hasOwnProperty(currentValue))
+                    txt += obj.values[currentValue];
+                else if(obj.hasOwnProperty('display')) {
+                    try {
+                        txt += eval('Math.round(' + replaceString(obj.display, {value: value}) + ' * 10) / 10');
+                    } catch(e) {
+                        console.error("Fehler beim eval von: Math.round(" + replaceString(obj.display, {value: value}) + " * 10) / 10");
+                    }
+                } else
+                    txt += '(' + Helper.toBin(currentValue) + ') -unknown-';
 
-            div.innerHTML += txt + '<br>';
+                if(obj.unit)
+                    txt += ' ' + obj.unit;
+
+                div.innerHTML += txt + '<br>';
+            }
         }
     }
-}
 
     toggle_updateIgnoredValues() {
         updateIgnoredValues = !updateIgnoredValues;
@@ -164,7 +168,7 @@ class GUI {
 
     toggle_valueIsFloating() {
         valueIsFloating = !valueIsFloating;
-        selectBit();
+        gui.selectBit();
     }
 
     toggle_menubar() {
@@ -210,165 +214,165 @@ class GUI {
     }
 
     ignoreStart() {
-    mode = 1;
-    btnIgnoreStop.removeAttribute('disabled');
-    btnIgnoreStart.setAttribute('disabled', 'true');
-}
+        mode = 1;
+        btnIgnoreStop.removeAttribute('disabled');
+        btnIgnoreStart.setAttribute('disabled', 'true');
+    }
 
     ignoreStop() {
-    mode = 0;
-    btnIgnoreStop.setAttribute('disabled', 'true');
-    btnIgnoreStart.removeAttribute('disabled');
-}
+        mode = 0;
+        btnIgnoreStop.setAttribute('disabled', 'true');
+        btnIgnoreStart.removeAttribute('disabled');
+    }
 
     moveRowUp(ele) {
-    const currentRow = ele.parentElement.parentElement;
-    const previousRow = ele.parentElement.parentElement.previousElementSibling;
-    currentRow.parentElement.insertBefore(currentRow, previousRow);
-}
+        const currentRow = ele.parentElement.parentElement;
+        const previousRow = ele.parentElement.parentElement.previousElementSibling;
+        currentRow.parentElement.insertBefore(currentRow, previousRow);
+    }
 
     moveRowDown(ele) {
-    const currentRow = ele.parentElement.parentElement;
-    const nextRow = ele.parentElement.parentElement.nextElementSibling; // previousElementSibling
-    currentRow.parentElement.insertBefore(nextRow, currentRow);
-}
+        const currentRow = ele.parentElement.parentElement;
+        const nextRow = ele.parentElement.parentElement.nextElementSibling; // previousElementSibling
+        currentRow.parentElement.insertBefore(nextRow, currentRow);
+    }
 
     save_newMessage() {
-    const cid = 'canid_' + gui.cachedQuerySelector('#newmessage .cid').textContent;
-    const bytenr = 'byte_' + gui.cachedQuerySelector('#newmessage .byte').textContent;
-    const mask = 'mask_' + gui.cachedQuerySelector('#newmessage .mask').textContent;
-    const text = gui.cachedQuerySelector('#newmessage #label').value;
+        const cid = 'canid_' + gui.cachedQuerySelector('#newmessage .cid').textContent;
+        const bytenr = 'byte_' + gui.cachedQuerySelector('#newmessage .byte').textContent;
+        const mask = 'mask_' + gui.cachedQuerySelector('#newmessage .mask').textContent;
+        const text = gui.cachedQuerySelector('#newmessage #label').value;
 
-    // 1. Check if known[cid] exists
-    if(!known.hasOwnProperty(cid))
-        known[cid] = {};
+        // 1. Check if known[cid] exists
+        if(!known.hasOwnProperty(cid))
+            known[cid] = {};
 
-    // 2. Check if known[cid][byte_*] exists
-    if(!known[cid].hasOwnProperty(bytenr))
-        known[cid][bytenr] = {};
+        // 2. Check if known[cid][byte_*] exists
+        if(!known[cid].hasOwnProperty(bytenr))
+            known[cid][bytenr] = {};
 
-    // 3. Check if known[cid][byte_*][mask_*] exists
-    // => override existing
-    // if(!known[cid][bytenr].hasOwnProperty(mask)) {
-    known[cid][bytenr][mask] = {};
-    known[cid][bytenr][mask].text = text;
-    // }
+        // 3. Check if known[cid][byte_*][mask_*] exists
+        // => override existing
+        // if(!known[cid][bytenr].hasOwnProperty(mask)) {
+        known[cid][bytenr][mask] = {};
+        known[cid][bytenr][mask].text = text;
+        // }
 
-    if(valueIsFloating) {
-        known[cid][bytenr][mask].display = gui.cachedQuerySelector('#newmessage #newDisplay').value;
-    } else {
-        const values = gui.cachedQuerySelector('#newmessage .newMessageValues', true);
-        if(values.length) {
-            known[cid][bytenr][mask].values = {};
-            for(let i = 0; i < values.length; i++) {
-                known[cid][bytenr][mask].values[values[i].getAttribute('data-value')] = values[i].value;
+        if(valueIsFloating && gui.cachedQuerySelector('#newmessage #newDisplay')) {
+            known[cid][bytenr][mask].display = gui.cachedQuerySelector('#newmessage #newDisplay').value;
+        } else {
+            const values = gui.cachedQuerySelector('#newmessage .newMessageValues', true);
+            if(values.length) {
+                known[cid][bytenr][mask].values = {};
+                for(let i = 0; i < values.length; i++) {
+                    known[cid][bytenr][mask].values[values[i].getAttribute('data-value')] = values[i].value;
+                }
+            }
+        }
+
+        ignoreKnown();
+
+        gui.cachedQuerySelector('#newmessage').classList.add('hidden');
+
+        saveKnownToFile();
+    }
+
+    selectBit(bytenr) {
+        // 1. Toggle Bit in mask
+        if(bytenr)
+            gui.cachedQuerySelector('#newmessage .mask span:nth-child(' + bytenr + ')').textContent = +!+gui.cachedQuerySelector('#newmessage .mask span:nth-child(' + bytenr + ')').textContent;
+
+        // 2. calculate new Value
+        const value = parseInt(gui.cachedQuerySelector('#newmessage .bin').innerText, 2);
+        const mask = parseInt(gui.cachedQuerySelector('#newmessage .mask').innerText, 2);
+        const newValue = value & mask;
+        gui.cachedQuerySelector('#newmessage .newhex').textContent = Helper.toHex(newValue);
+        gui.cachedQuerySelector('#newmessage .newdec').textContent = newValue;
+
+        // 3. remove old dynamicly added rows
+        const dynamics = document.querySelectorAll('#newmessage table .dynamic');
+        for(let i = 0; i < dynamics.length; i++)
+            dynamics[i].parentNode.removeChild(dynamics[i]);
+
+        if(valueIsFloating) {
+            // display-Formel eingeben
+            const row = gui.cachedQuerySelector('#newmessage table').insertRow();
+            row.classList.add('dynamic');
+
+            // 1. Label
+            const cel1 = row.insertCell();
+            cel1.textContent = 'Display:';
+            cel1.setAttribute('colspan', 2);
+            cel1.style['text-align'] = 'right';
+
+            // 2. empty
+            row.insertCell();
+
+            // 3. Textfield
+            const cel3 = row.insertCell();
+            cel3.innerHTML = '<input type="text" id="newDisplay" value="${value} * 2" />';
+            return;
+        }
+
+        gui.addDynamicRow(0);
+
+        if(!mask || mask === 0)
+            return;
+
+        // 4. show all possible values
+        let added = {};
+        for(let i = 0; i <= 255; i++) {
+            if((mask & i) > 0 && !added.hasOwnProperty(mask & i)) {
+                added[mask & i] = true;
+                gui.addDynamicRow((mask & i));
             }
         }
     }
 
-    ignoreKnown();
-
-    gui.cachedQuerySelector('#newmessage').classList.add('hidden');
-
-    saveKnownToFile();
-}
-
-    selectBit(bytenr) {
-    // 1. Toggle Bit in mask
-    if(bytenr)
-        gui.cachedQuerySelector('#newmessage .mask span:nth-child(' + bytenr + ')').textContent = +!+gui.cachedQuerySelector('#newmessage .mask span:nth-child(' + bytenr + ')').textContent;
-
-    // 2. calculate new Value
-    const value = parseInt(gui.cachedQuerySelector('#newmessage .bin').innerText, 2);
-    const mask = parseInt(gui.cachedQuerySelector('#newmessage .mask').innerText, 2);
-    const newValue = value & mask;
-    gui.cachedQuerySelector('#newmessage .newhex').textContent = Helper.toHex(newValue);
-    gui.cachedQuerySelector('#newmessage .newdec').textContent = newValue;
-
-    // 3. remove old dynamicly added rows
-    const dynamics = document.querySelectorAll('#newmessage table .dynamic');
-    for(let i = 0; i < dynamics.length; i++)
-        dynamics[i].parentNode.removeChild(dynamics[i]);
-
-    if(valueIsFloating) {
-        // display-Formel eingeben
+    addDynamicRow(i) {
         const row = gui.cachedQuerySelector('#newmessage table').insertRow();
         row.classList.add('dynamic');
 
         // 1. Label
         const cel1 = row.insertCell();
-        cel1.textContent = 'Display:';
+        cel1.textContent = 'Value:';
         cel1.setAttribute('colspan', 2);
         cel1.style['text-align'] = 'right';
 
-        // 2. empty
-        row.insertCell();
+        // 2. Value
+        const cel2 = row.insertCell();
+        cel2.textContent = Helper.toBin(i).split('').join(' ');
 
         // 3. Textfield
         const cel3 = row.insertCell();
-        cel3.innerHTML = '<input type="text" id="newDisplay" value="${value} * 2" />';
-        return;
+        cel3.innerHTML = '<input type="text" class="newMessageValues" data-value="' + Helper.toBin(i).replace(/^[0]{0,7}/, '') + '" />';
     }
-
-    addDynamicRow(0);
-
-    if(!mask || mask === 0)
-        return;
-
-    // 4. show all possible values
-    let added = {};
-    for(let i = 0; i <= 255; i++) {
-        if((mask & i) > 0 && !added.hasOwnProperty(mask & i)) {
-            added[mask & i] = true;
-            addDynamicRow((mask & i));
-        }
-    }
-}
-
-    addDynamicRow(i) {
-    const row = gui.cachedQuerySelector('#newmessage table').insertRow();
-    row.classList.add('dynamic');
-
-    // 1. Label
-    const cel1 = row.insertCell();
-    cel1.textContent = 'Value:';
-    cel1.setAttribute('colspan', 2);
-    cel1.style['text-align'] = 'right';
-
-    // 2. Value
-    const cel2 = row.insertCell();
-    cel2.textContent = Helper.toBin(i).split('').join(' ');
-
-    // 3. Textfield
-    const cel3 = row.insertCell();
-    cel3.innerHTML = '<input type="text" class="newMessageValues" data-value="' + Helper.toBin(i).replace(/^[0]{0,7}/, '') + '" />';
-}
 
     newMessage(ele) {
-    const currentRow = ele.parentElement;
-    const cid = currentRow.getAttribute('data-canid');
-    const bytenr = currentRow.getAttribute('data-bytenr');
-    const value = parseInt(ele.parentElement.children[0].children[0].textContent, 2);
+        const currentRow = ele.parentElement;
+        const cid = currentRow.getAttribute('data-canid');
+        const bytenr = currentRow.getAttribute('data-bytenr');
+        const value = parseInt(ele.parentElement.children[0].children[0].textContent, 2);
 
-    cachedQuerySelector('#newmessage .cid').textContent = cid.replace(/canid_/, '');
-    cachedQuerySelector('#newmessage .byte').textContent = bytenr;
-    cachedQuerySelector('#newmessage .hex').textContent = Helper.toHex(value);
-    cachedQuerySelector('#newmessage .dec').textContent = value;
+        gui.cachedQuerySelector('#newmessage .cid').textContent = cid.replace(/canid_/, '');
+        gui.cachedQuerySelector('#newmessage .byte').textContent = bytenr;
+        gui.cachedQuerySelector('#newmessage .hex').textContent = Helper.toHex(value);
+        gui.cachedQuerySelector('#newmessage .dec').textContent = value;
 
-    // Binary clickable
-    cachedQuerySelector('#newmessage .bin').textContent = '';
-    cachedQuerySelector('#newmessage .mask').textContent = '';
-    const binstr = Helper.toBin(value);
-    for(let i = 0; i < binstr.length; i++) {
-        cachedQuerySelector('#newmessage .bin').innerHTML  += '<span onclick="selectBit(' + (i + 1) + ')" data-bytenr="' + (i + 1) + '">' + binstr[i] + '</span>';
-        cachedQuerySelector('#newmessage .mask').innerHTML += '<span onclick="selectBit(' + (i + 1) + ')" data-bytenr="' + (i + 1) + '">0</span>';
+        // Binary clickable
+        gui.cachedQuerySelector('#newmessage .bin').textContent = '';
+        gui.cachedQuerySelector('#newmessage .mask').textContent = '';
+        const binstr = Helper.toBin(value);
+        for(let i = 0; i < binstr.length; i++) {
+            gui.cachedQuerySelector('#newmessage .bin').innerHTML  += '<span onclick="gui.selectBit(' + (i + 1) + ')" data-bytenr="' + (i + 1) + '">' + binstr[i] + '</span>';
+            gui.cachedQuerySelector('#newmessage .mask').innerHTML += '<span onclick="gui.selectBit(' + (i + 1) + ')" data-bytenr="' + (i + 1) + '">0</span>';
+        }
+
+        gui.selectBit();
+
+        changed_collectForMs(1000);
+
+        newmessage.classList.remove('hidden');
     }
-
-    selectBit();
-
-    changed_collectForMs(1000);
-
-    newmessage.classList.remove('hidden');
-}
 
 }

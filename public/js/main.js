@@ -38,7 +38,7 @@ function ignoreKnown() {
             for(let b in known[cid])
                 if(known[cid].hasOwnProperty(b) && (!ignore.hasOwnProperty(cid + '_b' + b.replace(/byte_/, '')) || !ignore[cid + '_b' + b.replace(/byte_/, '')])) {
                     ignore[cid + '_b' + b.replace(/byte_/, '')] = true;
-                    const c = cachedQuerySelector('#' + cid + ' td[data-bytenr="' + b.replace(/byte_/, '') + '"]');
+                    const c = gui.cachedQuerySelector('#' + cid + ' td[data-bytenr="' + b.replace(/byte_/, '') + '"]');
                     if(c)
                         c.classList.add('ignored');
                 }
@@ -138,7 +138,7 @@ socket.on('message', function (data) {
                     row.setAttribute('data-canid', cid);
 
                     const cBtns = row.insertCell(0);
-                    cBtns.innerHTML = '<span onclick="moveRowUp(this);" class="clickable">up</span>/<span onclick="moveRowDown(this);" class="clickable">down</span>';
+                    cBtns.innerHTML = '<span onclick="gui.moveRowUp(this);" class="clickable">up</span>/<span onclick="gui.moveRowDown(this);" class="clickable">down</span>';
 
                     for(let i = 7; i >= 0; i--) {
                         const c = row.insertCell(0), values = data.sendDiff[cid][i];
@@ -148,7 +148,7 @@ socket.on('message', function (data) {
                             c.innerHTML = Helper.numberToString(cid, i + 1, values[values.length - 1], true);
                             values.length && gui.updateCarStatus(cid, i + 1, values[values.length - 1]);
                         }
-                        c.innerHTML = '<span class="content">' + c.innerHTML + '</span><span class="buttons clickable" onclick="newMessage(this)">M</span>';
+                        c.innerHTML = '<span class="content">' + c.innerHTML + '</span><span class="buttons clickable" onclick="gui.newMessage(this)">M</span>';
                     }
                     const cID = row.insertCell(0);
                     const i   = parseInt(cid.replace(/canid_0x/, ''), 16);
@@ -174,16 +174,44 @@ function isIgnored(cid, bytenr, mask) {
     if(ignore.hasOwnProperty(cid + '_b' + bytenr + '_m' + mask) && ignore[cid + '_b' + bytenr + '_m' + mask]) return true;
 }
 
+let fs = null;
+
+function getFS(callback) {
+    if(fs) {
+        callback && callback();
+    } else {
+        navigator.webkitPersistentStorage.requestQuota(1024*1024, function() {
+            window.webkitRequestFileSystem(window.PERSISTENT , 1024*1024, function(filesystem) {
+                fs = filesystem;
+
+                callback && callback();
+            });
+        })
+    }
+}
+
 function saveKnownToFile() {
-    navigator.webkitPersistentStorage.requestQuota(1024*1024, function() {
-        window.webkitRequestFileSystem(window.PERSISTENT , 1024*1024, function(filesystem) {
-            // filesystem:http://localhost:3000/persistent/known_test.json
-            filesystem.root.getFile("/known_test.json", {create: true}, function(file) {
-                file.createWriter(function(inhalt) {
-                    const blob = new Blob([JSON.stringify(known)], {type: "application/json"});
-                    inhalt.write(blob);
-                    alert('Saved!');
-                });
+    getFS(function() {
+        fs.root.getFile("/known_test.json", {create: true}, function(file) {
+            file.createWriter(function(inhalt) {
+                const blob = new Blob([JSON.stringify(known)], {type: "application/json"});
+                inhalt.write(blob);
+                alert('Saved!');
+            });
+        });
+    })
+}
+
+function readKnownFromFile() {
+    getFS(function () {
+        fs.root.getFile("/known_test.json", {}, function(fileEntry) {
+            fileEntry.file(function(file) {
+                const reader = new FileReader();
+                reader.onloadend = function(e) {
+                    const tmp = JSON.parse(e.target.result);
+                    known = tmp;
+                };
+                reader.readAsText(file);
             });
         });
     })
@@ -239,6 +267,8 @@ Mousetrap.bind('alt+s', function() {
     else
         ignoreStop();
 });
+
+readKnownFromFile();
 
 function copyTextToClipboard(text) {
     const textArea = document.createElement("textarea");
