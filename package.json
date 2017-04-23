@@ -1,0 +1,21 @@
+{
+  "name": "node-canmonitor",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "DEBUG=canmonitor* node ./bin/www",
+    "update": "npm update"
+  },
+  "dependencies": {
+    "body-parser": "~1.16.0",
+    "cookie-parser": "~1.4.3",
+    "debug": "~2.6.0",
+    "express": "~4.14.1",
+    "jade": "~1.11.0",
+    "morgan": "~1.7.0",
+    "node-int64": "^0.4.0",
+    "serialport": "latest",
+    "serve-favicon": "~2.3.2",
+    "socket.io": "*"
+  }
+}

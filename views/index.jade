@@ -1,0 +1,93 @@
+extends layout
+
+block content
+    div(class='container-fluid')
+        div(class='row')
+            h1(id='caption') CAN Monitoring
+        div(class='row')
+            div(class='col-md-3')
+                ul(id='serialports')
+            div(class='col-md-9 col-xl-6')
+                button(id="btnIgnoreStart", onclick='gui.ignoreStart()') Ignore Start
+                button(id="btnIgnoreStop", onclick='gui.ignoreStop()', disabled=true) Ignore Stop
+            div(class='col-md-6 col-xl-3')
+                button(onclick='resetLastValues();') Reset LastValues
+                button(onclick='details.innerHTML="";') Reset Details
+
+        div(class='row')
+            div(class='col-md-6')
+                div(id='chartContainer', style='height: 120px;margin-bottom:20px;')
+                table(id='table', border)
+                    tr
+                        th CanID
+                        th 1. Byte
+                        th 2. Byte
+                        th 3. Byte
+                        th 4. Byte
+                        th 5. Byte
+                        th 6. Byte
+                        th 7. Byte
+                        th 8. Byte
+                        th up/down
+                        //th Anzahl
+            div(class='col-md-6')
+                div(class='row')
+                    div(class='col-md-12 hidden', id='newmessage')
+                        table
+                            tr
+                                th CanID
+                                th Byte Nr
+                                th Bin
+                                th Hex
+                                th Dec
+                            tr
+                                td(class='cid') cid
+                                td(class='byte') byte
+                                td(class='bin') bin
+                                td(class='hex') hex
+                                td(class='dec') dec
+                            tr
+                                td(colspan='2', style='text-align:right;') Mask:
+                                td(class='mask') mask
+                                td(class='newhex') newhex
+                                td(class='newdec') newdec
+                            tr
+                                td(colspan='5') &nbsp;
+                            tr
+                                td
+                                    button(onclick='save_newMessage();') Speichern
+                            tr
+                                td
+                                    input(id='valueIsFloating', type='checkbox', onchange='gui.toggle_valueIsFloating();', checked)
+                                    label(for='valueIsFloating') isFloating
+                                td(style='text-align:right;') Label:
+                                td
+                                td
+                                    input(id='label')
+                    div(class='col-md-12', id='carstatus')
+                    div(class='col-md-12', id='details')
+    div(class='menu-bar closed')
+        h4 Settings
+        span(class='closebtn', onclick='gui.toggle_menubar();') X
+        br
+        span
+            input(id='updateIgnoredValues', type='checkbox', onchange='gui.toggle_updateIgnoredValues();', checked)
+            label(for='updateIgnoredValues') updateIgnoredValues
+        span
+            input(type='range', id='collectForMs', onchange='changed_collectForMs()', min='100', max='1000', step='20', value='400')
+            label(for='collectForMs', id='collectForMsLabel') update alle 400ms
+        br
+        button(onclick='saveKnownToFile();') Save 'known'
+        br
+        br
+        h4 Help
+        div CLICK: Toggle Watch
+        div STRG+CLICK: Toggle Ignore
+        br
+        div alt+r v: Reset LastValues
+        div alt+r d: Reset Details
+        div alt+s: Ignore Start/Stop
+        div alt+m: Settings Menu
+        br
+        br
+        a(target='_blank', href='filesystem:http://localhost:3000/persistent/known_test.json') known_test.json

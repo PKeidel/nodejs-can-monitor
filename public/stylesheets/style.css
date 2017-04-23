@@ -1,0 +1,154 @@
+body {
+    padding: 20px;
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+    color: #00B7FF;
+}
+
+td:not(.changed) {
+    transition: background-color 350ms ease-out;
+}
+
+td.changed {
+    background-color: #7aff82;
+}
+
+table {
+    width: 100%;
+}
+
+table td.foundinfos {
+    color: red;
+}
+
+table td.watched {
+    border: 1px solid red !important;
+}
+
+table td.ignored {
+    color: #e8e8e8 !important;
+}
+
+span.info {
+    padding: 3px;
+    border: 1px solid silver;
+    border-radius:2px;
+}
+
+#mode span:hover {
+    background-color: #e8e8e8;
+}
+
+hr {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+i.bin {
+    color: silver;
+    font-size: .8em;
+}
+
+.clickable:hover {
+    text-decoration: underline;
+}
+
+#table tr:nth-child(1) *:nth-child(10), #table tr:nth-child(2) *:nth-child(10), #table tr:last-child *:nth-child(10) {
+    visibility: hidden;
+}
+
+#table td {
+    position: relative;
+    font-size: .9em;
+}
+
+#table td span.buttons {
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    font-size: .8em;
+    color: gray;
+}
+
+#newmessage {
+    font-size: 1.3em;
+    min-height: 120px;
+    background-color: #ececec;
+    border-radius: 5px;
+    padding: 3px;
+}
+
+#newmessage span {
+    padding: 3px;
+}
+
+#newmessage .bin span:hover, #newmessage .mask span:hover {
+    text-decoration: underline;
+}
+
+#newmessage .bin span.selected {
+    border: 1px solid red !important;
+}
+
+.hidden {
+    visibility: hidden;
+}
+
+button, span.info {
+    margin-right: 2px;
+}
+
+.menu-bar {
+    background-color: #f1f1f1;
+    width: 210px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    transition: left 350ms ease-out;
+}
+
+.menu-bar.closed {
+    left: -195px;
+}
+
+.menu-bar span.closebtn {
+    position: absolute;
+    right: 3px;
+    top: 3px;
+    height: 20px;
+    width: 20px;
+    background-color: silver;
+}
+
+.menu-bar span.closebtn:hover {
+    background-color: gray;
+}
+
+.menu-bar span.onlinestatus {
+    position: absolute;
+    right: 3px;
+    top: 30px;
+    height: 16px;
+    width: 16px;
+    border-radius: 8px;
+    transition: background-color 350ms ease-out;
+}
+
+.menu-bar span.onlinestatus.online {
+    background-color: green;
+}
+
+.menu-bar span.onlinestatus.offline {
+    background-color: red;
+}
+
+.canvasjs-chart-credit {
+    visibility: hidden;
+}
+
+#myCanvas {
+    border: 1px solid black;
+}
