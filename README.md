@@ -2,11 +2,11 @@
 
 This is a project to decode and visualize CAN messages of cars.
 
-* For Development: IntelliJ
-* Arduino with CAN Shield
+* For development: IntelliJ
+* Arduino with "CAN-BUS Shield"
 * npm start
 * http://localhost:3000
-* select the USB Port which the arduino is connected to
+* select the USB port which the arduino is connected to
 * Communication nodejs <-> Webpage via WebSockets
 
 
@@ -15,7 +15,7 @@ This is a project to decode and visualize CAN messages of cars.
 ### Quick Usage guide
 * Select an input on the top left
 * "Ignore Start" to start capturing bytes that should be ignored
-* Click on a Hex value, to watch this Byte
+* Click on a hex value, to watch this byte
 * STRG+Click on a Hex value, to toggle ignore of that Byte
 * "M" to save the Value to the "known" list
 
