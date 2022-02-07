@@ -138,7 +138,7 @@ socket.on('message', function (data) {
                     row.setAttribute('data-canid', cid);
 
                     const cBtns = row.insertCell(0);
-                    cBtns.innerHTML = '<span onclick="gui.moveRowUp(this);" class="clickable">up</span>/<span onclick="gui.moveRowDown(this);" class="clickable">down</span>';
+                    cBtns.innerHTML = '<span onclick="gui.moveRowUp(this);" class="clickable" title="Move row up">up</span>/<span onclick="gui.moveRowDown(this);" class="clickable" title="Move row down">down</span>';
 
                     for(let i = 7; i >= 0; i--) {
                         const c = row.insertCell(0), values = data.sendDiff[cid][i];
@@ -148,11 +148,11 @@ socket.on('message', function (data) {
                             c.innerHTML = Helper.numberToString(cid, i + 1, values[values.length - 1], true);
                             values.length && gui.updateCarStatus(cid, i + 1, values[values.length - 1]);
                         }
-                        c.innerHTML = '<span class="content">' + c.innerHTML + '</span><span class="buttons clickable" onclick="gui.newMessage(this)">M</span>';
+                        c.innerHTML = '<span class="content">' + c.innerHTML + '</span><span class="buttons clickable" title="Save as new message" onclick="gui.newMessage(this)">M</span>';
                     }
                     const cID = row.insertCell(0);
                     const i   = parseInt(cid.replace(/canid_0x/, ''), 16);
-                    cID.innerHTML = Helper.numberToString(cid, false, i, true, 3); // canID.toString(16).toUpperCase();
+                    cID.innerHTML = Helper.numberToString(cid, false, i, true, 3);
 
                     ignoreKnown();
                 }
@@ -176,6 +176,7 @@ function isIgnored(cid, bytenr, mask) {
 
 let fs = null;
 
+// TODO use indexedDB
 function getFS(callback) {
     if(fs) {
         callback && callback();
@@ -196,7 +197,7 @@ function saveKnownToFile() {
             file.createWriter(function(inhalt) {
                 const blob = new Blob([JSON.stringify(known)], {type: "application/json"});
                 inhalt.write(blob);
-                alert('Saved!');
+                // alert('Saved!');
             });
         });
     })
@@ -209,6 +210,7 @@ function readKnownFromFile() {
                 const reader = new FileReader();
                 reader.onloadend = function(e) {
                     const tmp = JSON.parse(e.target.result);
+                    console.log('known_test.json:', tmp)
                     known = tmp;
                 };
                 reader.readAsText(file);
@@ -236,11 +238,11 @@ function showPorts(ports, connected) {
     serialports.innerHTML = "";
     let pCount = 0;
     for (const p in ports)
-        if (ports.hasOwnProperty(p) && ports[p].comName.indexOf('USB') >= 0) {
-            if(ports[p].comName !== connected)
-                serialports.innerHTML += "<li style='text-decoration:underline;' onclick=\"selectPort('" + ports[p].comName + "')\">" + ports[p].comName + "</li>";
+        if (ports.hasOwnProperty(p) && ports[p].path.indexOf('USB') >= 0) {
+            if(ports[p].path !== connected)
+                serialports.innerHTML += "<li style='text-decoration:underline;' onclick=\"selectPort('" + ports[p].path + "')\">" + ports[p].path + "</li>";
             else
-                serialports.innerHTML += "<li title='STOP!' onclick='stopPort()'>" + ports[p].comName + "</li>";
+                serialports.innerHTML += "<li title='STOP!' onclick='stopPort()'>" + ports[p].path + "</li>";
             pCount++;
         }
     if (!pCount)
@@ -258,6 +260,7 @@ function showPorts(ports, connected) {
         serialports.innerHTML += "<li style='text-decoration:underline;' onclick=\"selectPort('random')\">Random</li>";
 }
 
+// https://craig.is/killing/mice
 Mousetrap.bind('alt+r v', resetLastValues);
 Mousetrap.bind('alt+r d', function() {details.innerHTML="";});
 Mousetrap.bind('alt+m', GUI.toggle_menubar);

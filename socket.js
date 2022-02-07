@@ -37,17 +37,15 @@ class ArduinoViaSerial extends Input {
 
         this.holder = new SerialPort(port, {
             baudRate: 115200,
-            parser: SerialPort.parsers.byteDelimiter([0xFE, 0xFF])
+            parser: new SerialPort.parsers.Delimiter({delimiter: [0xFE, 0xFF]})
         });
 
         this.isRunning = true;
 
         this.holder.on('data', function (data) {
             const canID = (data[0] << 8 | data[1]);
-            data = data.splice(2);
-            data.pop();
-            data.pop();
-            // console.log("ondata: canID=%s, data=" + data, canID.toString(16).toUpperCase());
+            data = data.slice(2, data.length-2) // remove first 2 bytes (canId) and last 2 bytes (delimiter)
+            // console.log("ondata: canID=%s, data=%s", canID.toString(16).toUpperCase(), Array.from(new Uint8Array(data)).map(n => n.toString(16).padStart(2, "0")).join(""));
             callback(canID, data);
         });
     }
@@ -197,17 +195,13 @@ Object.map = (obj, predicate) =>
 module.exports = function(server) {
     let collectForMs = 400;
     let io, nextClientID = 1, ports, currentInput;
-    let ignoreIDs = {}, lastValues = {}, sendDiff = {};
+    let lastValues = {}, sendDiff = {};
     let intervallHandle, totalCount = 0, sendCount = 0;
     let countPerID = {};
 
     function sendAllPorts(client) {
-        SerialPort.list(function (err, p) {
-            ports = Object.filter(p, port => port.comName.indexOf('USB') >= 0); // .map(key => console.log(key)); // .map( key => 'Arduino Serial: ' + key );
-            ports = Object.map(ports, o => {
-                o.comName = 'Arduino Serial: ' + o.comName;
-                return o;
-            });
+        SerialPort.list().then(function (p) {
+            ports = Object.filter(p, port => port.path.indexOf('USB') >= 0);
             (client || io.sockets).send({ports: ports, connected: (currentInput && currentInput.isRunning && currentInput.name) || null});
         });
     }
@@ -216,10 +210,17 @@ module.exports = function(server) {
         if(!intervallHandle)
             intervallHandle = setTimeout(sendThatBytes, collectForMs);
 
+        if(buf.length > 8) {
+            console.warn("Invalid number of bytes:", buf.length);
+            return;
+        }
+
         totalCount++;
 
-        while(buf.length < 8)
-            buf.unshift(0);
+        const buffer8Bytes = new Uint8Array(new ArrayBuffer(8));
+        // Copy the values into the array starting at index [8-buf.length] so we prefix the buffer with 0x00 values
+        buffer8Bytes.set(buf, 8-buf.length);
+        buf = buffer8Bytes;
 
         const key = 'canid_0x' + canID.toString(16).toUpperCase();
 
@@ -284,23 +285,17 @@ module.exports = function(server) {
 
     function start_fromFile() {
         currentInput = new File();
-        currentInput.start(function(canID, bytes) {
-            groupAndSend(canID, bytes);
-        });
+        currentInput.start(groupAndSend);
     }
 
     function start_fromRandom() {
         currentInput = new Random();
-        currentInput.start(function(canID, bytes) {
-            groupAndSend(canID, bytes);
-        });
+        currentInput.start(groupAndSend);
     }
 
     function start_fromSerial(port) {
         currentInput = new ArduinoViaSerial();
-        currentInput.start(function(canID, bytes) {
-            groupAndSend(canID, bytes);
-        }, port);
+        currentInput.start(groupAndSend, port);
         sendAllPorts();
     }
 
@@ -332,8 +327,8 @@ module.exports = function(server) {
                             start_fromCommandline();
                         else if(data.select === 'random')
                             start_fromRandom();
-                        else if(data.select.indexOf('Arduino Serial: ') === 0)
-                            start_fromSerial(data.select.replace(/Arduino Serial: /, ''));
+                        else if(data.select.indexOf('/dev/') === 0)
+                            start_fromSerial(data.select);
                         else
                             throw new Error('Unknown input: ' + data.select);
                     }
@@ -350,12 +345,11 @@ module.exports = function(server) {
 
                 setTimeout(function() {
                     sendAllPorts(client);
-                    client.send({collectForMs: collectForMs});
+                    client.send({collectForMs});
                 }, 200);
             });
 
             setInterval(sendAllPorts, 15000);
-            // sendAllPorts();
         }
     };
 };
